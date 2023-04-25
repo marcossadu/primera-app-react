@@ -55,16 +55,26 @@ function Wordle() {
         fetch("https://random-word-api.herokuapp.com/all?lang=es")
         .then(result => result.json())
         .then((todasPalabras)=>{
-            let palabrasArr = todasPalabras.filter(palabra => {
-                return palabra.length == 5 && !palabra.toLowerCase().includes("á")  && !palabra.toLowerCase().includes("é")  && !palabra.toLowerCase().includes("í") && !palabra.toLowerCase().includes("ó") && !palabra.toLowerCase().includes("ú") && palabra.toLowerCase() == palabra
+            let palabrasArr = [];
+            todasPalabras.filter(palabra => palabra.length === 5).forEach(palabra => {
+                if(palabra.length === 5 && !palabra.includes(".")) {
+                    let palabraCopia = palabra.toUpperCase();
+                    palabraCopia = palabraCopia.replace("Á", "A");
+                    palabraCopia = palabraCopia.replace("É", "E");
+                    palabraCopia = palabraCopia.replace("Í", "I");
+                    palabraCopia = palabraCopia.replace("Ó", "O");
+                    palabraCopia = palabraCopia.replace("Ú", "U");
+                    palabrasArr.push(palabraCopia);
+                }
             })
+            console.log("palabras: ", palabrasArr);
             setSolucion(palabrasArr[Math.floor(Math.random()*palabrasArr.length)].toUpperCase());
             // setSolucion("TIGRE");
             setTodasPalabras(palabrasArr);
         })
     }
     const comprobarPalabra = (palabra) => {
-        return todasPalabras.includes(palabra.toLowerCase());
+        return todasPalabras.includes(palabra.toUpperCase());
     }
     const toastNoExiste = () => 
         toast("La palabra no existe!", {
@@ -101,39 +111,34 @@ function Wordle() {
             theme: "dark",
     });
     const keyPress = (letter) => {
-        if(fin) {
-            return;
-        }
+        if(fin) return;
         
         //detectamos en qué palabra estamos:
         let indicePalabraActual = palabras.findIndex(palabra => !palabra.checkeada);
 
-        let palabrasAux = palabras.map(palabra => palabra);
+        let palabrasCopy = palabras.map(palabra => palabra);
         
         if(letter === "{bksp}") {
-            palabrasAux = palabras.map((palabra, k) => {
+            palabrasCopy = palabras.map((palabra, k) => {
                 if(k === indicePalabraActual && palabra.contenido.length > 0) {
                     palabra.contenido = palabra.contenido.substring(0, palabra.contenido.length-1);
                 }
                 return palabra;
             })
-            setPalabras(palabrasAux);
+            setPalabras(palabrasCopy);
         } else if (letter === "{enter}") {
-            if(palabras[indicePalabraActual].contenido.length === MAX_WORD_LENGTH) {
-                if(fin) return;
-
-                console.log("palabra: ", palabras[indicePalabraActual].contenido);
-                console.log("existe? ", comprobarPalabra(palabras[indicePalabraActual].contenido));
-                if(palabras[indicePalabraActual].contenido === solucion) {
+            let palabraActual = palabras[indicePalabraActual];
+            if(palabraActual.contenido.length === MAX_WORD_LENGTH) {
+                if(palabraActual.contenido === solucion) {
                     //GUANYAT!
                     setFin(true);
                     toastPalabraCorrecta();
-                } else if(!comprobarPalabra(palabras[indicePalabraActual].contenido)) {
+                } else if(!comprobarPalabra(palabraActual.contenido)) {
                     //si la paraula no existeix
-                    palabrasAux[indicePalabraActual].contenido = "";
-                    palabrasAux[indicePalabraActual].checkeada = false;
-                    palabrasAux[indicePalabraActual].erronea = true;
-                    setPalabras(palabrasAux);
+                    palabrasCopy[indicePalabraActual].contenido = "";
+                    palabrasCopy[indicePalabraActual].checkeada = false;
+                    palabrasCopy[indicePalabraActual].erronea = true;
+                    setPalabras(palabrasCopy);
                     toastNoExiste();
                     return;
                 }
@@ -159,29 +164,26 @@ function Wordle() {
                 setLettersOk(letrasOk);
                 setLettersNotOk(letrasNoOk);
 
-                // palabrasAux = palabras.map(palabra => palabra);
-                
-                palabrasAux[indicePalabraActual].estados = estados;
-                palabrasAux[indicePalabraActual].checkeada = true;
+                palabrasCopy[indicePalabraActual].estados = estados;
+                palabrasCopy[indicePalabraActual].checkeada = true;
 
-                setPalabras(palabrasAux);
-                // setPalabras(palabrasInicial);
+                setPalabras(palabrasCopy);
 
-            } else {
-            }
+            } 
         } else {
             if(palabras.filter(palabra => palabra.checkeada).length === MAX_NUM_WORDS) {
                 console.log("juego finalizado!!");
+                setFin(true);
                 return;
             }
             //añadimos la letra pulsada
-            palabrasAux = palabras.map((palabra, k) => {
+            palabrasCopy = palabras.map((palabra, k) => {
                 if(k === indicePalabraActual && palabra.contenido.length < 5) {
                     palabra.contenido += letter;
                 }
                 return palabra;    
             })
-            setPalabras(palabrasAux);
+            setPalabras(palabrasCopy);
         }
     }
 
