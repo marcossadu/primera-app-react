@@ -57,7 +57,7 @@ function Wordle() {
         .then((todasPalabras)=>{
             let palabrasArr = [];
             todasPalabras.filter(palabra => palabra.length === 5).forEach(palabra => {
-                if(palabra.length === 5 && !palabra.includes(".")) {
+                if(palabra.length === 5 && !palabra.includes(".") && !palabra.includes(" ")) {
                     let palabraCopia = palabra.toUpperCase();
                     palabraCopia = palabraCopia.replace("Á", "A");
                     palabraCopia = palabraCopia.replace("É", "E");
@@ -68,8 +68,8 @@ function Wordle() {
                 }
             })
             console.log("palabras: ", palabrasArr);
-            setSolucion(palabrasArr[Math.floor(Math.random()*palabrasArr.length)].toUpperCase());
-            // setSolucion("TIGRE");
+            // setSolucion(palabrasArr[Math.floor(Math.random()*palabrasArr.length)].toUpperCase());
+            setSolucion("TIGRE");
             setTodasPalabras(palabrasArr);
         })
     }
@@ -115,19 +115,16 @@ function Wordle() {
         
         //detectamos en qué palabra estamos:
         let indicePalabraActual = palabras.findIndex(palabra => !palabra.checkeada);
+        let palabraActual = palabras[indicePalabraActual];
 
         let palabrasCopy = palabras.map(palabra => palabra);
         
         if(letter === "{bksp}") {
-            palabrasCopy = palabras.map((palabra, k) => {
-                if(k === indicePalabraActual && palabra.contenido.length > 0) {
-                    palabra.contenido = palabra.contenido.substring(0, palabra.contenido.length-1);
-                }
-                return palabra;
-            })
+            if(palabraActual.contenido.length > 0) {
+                palabrasCopy[indicePalabraActual].contenido = palabraActual.contenido.substring(0, palabraActual.contenido.length-1);
+            } 
             setPalabras(palabrasCopy);
         } else if (letter === "{enter}") {
-            let palabraActual = palabras[indicePalabraActual];
             if(palabraActual.contenido.length === MAX_WORD_LENGTH) {
                 if(palabraActual.contenido === solucion) {
                     //GUANYAT!
@@ -141,6 +138,9 @@ function Wordle() {
                     setPalabras(palabrasCopy);
                     toastNoExiste();
                     return;
+                } else if(indicePalabraActual === MAX_NUM_WORDS - 1) {
+                    toastHasPerdido();
+                    setFin(true);
                 }
                 
                 let letrasOk = lettersOk;
@@ -177,12 +177,9 @@ function Wordle() {
                 return;
             }
             //añadimos la letra pulsada
-            palabrasCopy = palabras.map((palabra, k) => {
-                if(k === indicePalabraActual && palabra.contenido.length < 5) {
-                    palabra.contenido += letter;
-                }
-                return palabra;    
-            })
+            if(palabrasCopy[indicePalabraActual].contenido.length < MAX_WORD_LENGTH) {
+                palabrasCopy[indicePalabraActual].contenido = palabraActual.contenido + letter;
+            }
             setPalabras(palabrasCopy);
         }
     }
@@ -191,16 +188,6 @@ function Wordle() {
         obtenerPalabras();
     }, []);
 
-    useEffect(()=>{
-        if(fin) return;
-
-        if(palabras.filter(palabra => palabra.checkeada).length === MAX_NUM_WORDS) {
-            //palabra incorrecta!
-            toastHasPerdido();
-            setFin(true);
-        }
-
-    }, [palabras])
 
     let buttonTheme = [
         {
